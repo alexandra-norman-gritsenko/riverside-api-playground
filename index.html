@@ -1,0 +1,973 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Riverside API Playground</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg:        #f0f2f7;
+      --surface:   #ffffff;
+      --border:    #e2e8f0;
+      --border-2:  #cbd5e1;
+      --text:      #1a1f36;
+      --muted:     #64748b;
+      --faint:     #94a3b8;
+      --purple:    #6d28d9;
+      --purple-lt: #f5f3ff;
+      --purple-bd: #c4b5fd;
+      --blue:      #1d4ed8;
+      --blue-lt:   #eff6ff;
+      --blue-bd:   #93c5fd;
+      --green:     #15803d;
+      --green-lt:  #f0fdf4;
+      --green-bd:  #86efac;
+      --orange:    #c2410c;
+      --orange-lt: #fff7ed;
+      --orange-bd: #fed7aa;
+      --red:       #dc2626;
+      --red-lt:    #fff1f2;
+      --red-bd:    #fca5a5;
+    }
+    html { scroll-behavior: smooth; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); font-size: 14px; line-height: 1.6; }
+
+    /* ─── NAV ─── */
+    nav { position: sticky; top: 0; z-index: 200; background: rgba(255,255,255,0.93); backdrop-filter: blur(12px); border-bottom: 1.5px solid var(--border); padding: 0 32px; display: flex; align-items: center; justify-content: space-between; height: 56px; }
+    .nav-logo { font-weight: 800; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+    .nav-logo span { color: var(--purple); }
+    .nav-links { display: flex; gap: 4px; }
+    .nav-link { padding: 7px 14px; border-radius: 8px; font-size: 13px; font-weight: 500; color: var(--muted); text-decoration: none; cursor: pointer; transition: background 0.15s, color 0.15s; border: none; background: transparent; }
+    .nav-link:hover { background: var(--bg); color: var(--text); }
+
+    /* ─── PAGE ─── */
+    .page { max-width: 1040px; margin: 0 auto; padding: 0 24px 80px; }
+
+    /* ─── HERO ─── */
+    .hero { text-align: center; padding: 56px 0 44px; }
+    .eyebrow { display: inline-flex; align-items: center; gap: 7px; background: var(--purple-lt); border: 1.5px solid var(--purple-bd); border-radius: 99px; padding: 4px 14px; font-size: 11.5px; font-weight: 700; color: var(--purple); letter-spacing: 0.05em; text-transform: uppercase; margin-bottom: 18px; }
+    .hero h1 { font-size: clamp(26px, 4.5vw, 44px); font-weight: 800; line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 14px; }
+    .hero h1 em { font-style: normal; color: var(--purple); }
+    .hero p { font-size: 16px; color: var(--muted); max-width: 540px; margin: 0 auto 28px; }
+    .cta-row { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+    .btn { display: inline-flex; align-items: center; gap: 7px; padding: 10px 22px; border-radius: 9px; border: none; font-size: 13px; font-weight: 600; cursor: pointer; transition: opacity 0.15s, transform 0.1s; text-decoration: none; }
+    .btn:hover { opacity: 0.85; }
+    .btn:active { transform: scale(0.97); }
+    .btn-purple { background: var(--purple); color: #fff; }
+    .btn-outline { background: var(--surface); color: var(--text); border: 1.5px solid var(--border-2); }
+
+    /* ─── SECTION ─── */
+    section { margin-bottom: 60px; scroll-margin-top: 72px; }
+    .section-label { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+    .section-num { width: 26px; height: 26px; border-radius: 50%; background: var(--purple); color: #fff; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+    .section-title { font-size: 20px; font-weight: 800; }
+    .section-sub { color: var(--muted); font-size: 14px; margin-bottom: 16px; margin-left: 36px; }
+
+    /* ─── CARD ─── */
+    .card { background: var(--surface); border: 1.5px solid var(--border); border-radius: 14px; overflow: hidden; }
+    .card-head { padding: 11px 18px; border-bottom: 1.5px solid var(--border); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+    .card-body { padding: 20px; }
+
+    /* ════════════════════════════
+       ANIMATED FLOW DIAGRAM
+    ════════════════════════════ */
+    .flow-panel { background: var(--surface); border: 1.5px solid var(--border); border-radius: 16px; padding: 28px 24px; }
+    .flow-block { margin-bottom: 28px; }
+    .flow-block:last-child { margin-bottom: 0; }
+    .flow-direction-label { font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 14px; display: flex; align-items: center; gap: 8px; }
+    .flow-direction-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    .flow-row { display: flex; align-items: center; justify-content: center; flex-wrap: nowrap; gap: 0; }
+    .fnode { border-radius: 12px; padding: 14px 16px; border: 1.5px solid; text-align: center; flex: 1; min-width: 0; }
+    .fnode-lbl { font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 4px; }
+    .fnode-name { font-size: 12px; font-weight: 700; line-height: 1.3; }
+    .fnode-sub  { font-size: 10.5px; opacity: 0.65; margin-top: 3px; }
+    .n-pur { background: var(--purple-lt); border-color: var(--purple-bd); }
+    .n-pur .fnode-lbl { color: var(--purple); }
+    .n-ora { background: var(--orange-lt); border-color: var(--orange-bd); }
+    .n-ora .fnode-lbl { color: var(--orange); }
+    .n-grn { background: var(--green-lt);  border-color: var(--green-bd); }
+    .n-grn .fnode-lbl { color: var(--green); }
+    .n-blu { background: var(--blue-lt);   border-color: var(--blue-bd); }
+    .n-blu .fnode-lbl { color: var(--blue); }
+
+    /* animated connector */
+    .farrow {
+      flex-shrink: 0; width: 64px; display: flex; flex-direction: column;
+      align-items: center; gap: 4px; position: relative;
+    }
+    .farrow-track {
+      width: 100%; height: 2px; background: var(--border-2); border-radius: 1px;
+      position: relative; overflow: visible;
+    }
+    .farrow-track::after {
+      content: '';
+      position: absolute; right: -1px; top: -4px;
+      border-left: 8px solid var(--border-2);
+      border-top: 5px solid transparent;
+      border-bottom: 5px solid transparent;
+    }
+    .farrow-packet {
+      position: absolute; top: -4px; left: 0;
+      width: 10px; height: 10px; border-radius: 50%;
+      pointer-events: none;
+    }
+    .farrow-label { font-size: 9.5px; font-weight: 700; color: var(--faint); letter-spacing: 0.04em; }
+
+    /* packet animations per connector index */
+    .pkt-a1 { background: var(--purple); animation: travel 2.4s ease-in-out infinite 0s; }
+    .pkt-a2 { background: var(--orange); animation: travel 2.4s ease-in-out infinite 0.5s; }
+    .pkt-b1 { background: var(--green);  animation: travel 2.4s ease-in-out infinite 0.2s; }
+    .pkt-b2 { background: var(--blue);   animation: travel 2.4s ease-in-out infinite 0.7s; }
+    @keyframes travel {
+      0%   { left: 0%;   opacity: 0; transform: scale(0.6); }
+      8%   { opacity: 1; transform: scale(1); }
+      88%  { opacity: 1; transform: scale(1); }
+      100% { left: 100%; opacity: 0; transform: scale(0.6); }
+    }
+
+    /* ════════════════════════════
+       STEPS
+    ════════════════════════════ */
+    .steps { display: flex; flex-direction: column; }
+    .step { display: flex; gap: 12px; padding: 9px 0; border-left: 2px solid var(--border); margin-left: 11px; padding-left: 18px; position: relative; }
+    .step::before { content: attr(data-n); position: absolute; left: -11px; top: 9px; width: 20px; height: 20px; border-radius: 50%; background: var(--purple); color: #fff; font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+    .step:last-child { border-left-color: transparent; }
+    .step-t { font-weight: 700; font-size: 12.5px; }
+    .step-d { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+    /* ════════════════════════════
+       PLAYGROUND
+    ════════════════════════════ */
+    .pg-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; align-items: start; }
+    @media (max-width: 700px) { .pg-grid { grid-template-columns: 1fr; } }
+
+    /* Step 0 card */
+    .step0-card {
+      background: linear-gradient(135deg, #1e1b4b, #312e81);
+      border: none; border-radius: 14px; padding: 20px 24px;
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      margin-bottom: 16px; flex-wrap: wrap;
+    }
+    .step0-left { display: flex; align-items: flex-start; gap: 14px; }
+    .step0-num { width: 36px; height: 36px; border-radius: 50%; background: rgba(255,255,255,0.12); border: 1.5px solid rgba(255,255,255,0.2); display: flex; align-items: center; justify-content: center; font-size: 15px; font-weight: 800; color: #fff; flex-shrink: 0; }
+    .step0-text h3 { font-size: 15px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+    .step0-text p  { font-size: 12.5px; color: #a5b4fc; line-height: 1.55; }
+    .step0-btn { display: inline-flex; align-items: center; gap: 6px; padding: 9px 18px; background: #fff; color: #312e81; border-radius: 9px; font-size: 12.5px; font-weight: 700; text-decoration: none; white-space: nowrap; flex-shrink: 0; transition: opacity 0.15s; }
+    .step0-btn:hover { opacity: 0.88; }
+
+    /* disclaimer */
+    .disclaimer {
+      background: #fffbeb; border: 1.5px solid #fcd34d;
+      border-radius: 10px; padding: 12px 16px;
+      display: flex; gap: 10px; align-items: flex-start;
+      margin-top: 12px; font-size: 12.5px; color: #78350f; line-height: 1.55;
+    }
+    .disclaimer-icon { font-size: 16px; flex-shrink: 0; margin-top: 1px; }
+    .disclaimer strong { color: #92400e; }
+
+    textarea#embed-code { width: 100%; height: 190px; resize: vertical; font-family: 'Menlo', monospace; font-size: 11.5px; line-height: 1.65; padding: 13px; border: 1.5px solid var(--border); border-radius: 10px; background: #1e1e2e; color: #cdd6f4; outline: none; transition: border-color 0.2s; }
+    textarea#embed-code:focus { border-color: var(--purple-bd); }
+    textarea#embed-code::placeholder { color: #585b70; }
+
+    .render-btn { width: 100%; margin-top: 10px; padding: 11px; background: var(--purple); color: #fff; border: none; border-radius: 10px; font-size: 13px; font-weight: 700; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: opacity 0.15s, transform 0.1s; }
+    .render-btn:hover { opacity: 0.88; }
+    .render-btn:active { transform: scale(0.98); }
+    .render-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; }
+    .reset-btn { width: 100%; margin-top: 8px; padding: 9px; background: transparent; color: var(--muted); border: 1.5px solid var(--border-2); border-radius: 10px; font-size: 12px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
+    .reset-btn:hover { background: var(--bg); }
+    .parse-error { margin-top: 10px; padding: 10px 14px; background: var(--red-lt); border: 1.5px solid var(--red-bd); border-radius: 8px; color: var(--red); font-size: 12.5px; display: none; }
+
+    /* ════════════════════════════
+       MOCK WEBSITE
+    ════════════════════════════ */
+    .mock-wrap { margin-top: 8px; }
+    .mock-label { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.07em; color: var(--faint); margin-bottom: 10px; }
+    .mock-shell { border: 2px solid var(--border-2); border-radius: 16px; overflow: hidden; box-shadow: 0 8px 40px rgba(0,0,0,0.1); }
+
+    /* browser chrome */
+    .mock-chrome { background: #f1f3f6; border-bottom: 1.5px solid #dde1e8; padding: 9px 14px; display: flex; align-items: center; gap: 10px; }
+    .chrome-dots { display: flex; gap: 5px; }
+    .chrome-dot { width: 11px; height: 11px; border-radius: 50%; }
+    .dot-r { background: #ff5f57; } .dot-y { background: #ffbd2e; } .dot-g { background: #28c840; }
+    .chrome-url { flex: 1; background: #fff; border: 1px solid #d1d5db; border-radius: 6px; padding: 4px 12px; font-size: 11.5px; color: var(--muted); font-family: monospace; text-align: center; }
+    .chrome-reload { font-size: 14px; color: #9ca3af; cursor: pointer; padding: 2px 6px; border-radius: 4px; border: none; background: transparent; }
+    .chrome-reload:hover { background: #e5e7eb; }
+
+    /* mock site */
+    .mock-site { background: #fff; }
+
+    /* mock nav */
+    .mk-nav { background: #0a0a1a; padding: 0 36px; display: flex; align-items: center; justify-content: space-between; height: 58px; }
+    .mk-logo { font-weight: 900; font-size: 18px; color: #fff; letter-spacing: -0.02em; }
+    .mk-logo span { color: #818cf8; }
+    .mk-links { display: flex; gap: 28px; }
+    .mk-link { font-size: 13px; color: #94a3b8; text-decoration: none; font-weight: 500; transition: color 0.15s; }
+    .mk-link:hover { color: #fff; }
+    .mk-reg { padding: 8px 18px; background: #6d28d9; color: #fff; border-radius: 8px; font-size: 13px; font-weight: 700; text-decoration: none; transition: opacity 0.15s; }
+    .mk-reg:hover { opacity: 0.88; }
+
+    /* mock hero */
+    .mk-hero {
+      background: #0a0a1a;
+      background-image:
+        radial-gradient(ellipse 80% 60% at 60% 50%, rgba(109,40,217,0.18) 0%, transparent 70%),
+        radial-gradient(ellipse 50% 40% at 20% 80%, rgba(29,78,216,0.12) 0%, transparent 60%);
+      padding: 52px 36px 48px;
+      display: grid; grid-template-columns: 1fr 420px; gap: 48px; align-items: start;
+    }
+    @media (max-width: 720px) { .mk-hero { grid-template-columns: 1fr; } }
+
+    .mk-hero-left {}
+    .mk-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(109,40,217,0.25); border: 1px solid rgba(167,139,250,0.35); border-radius: 99px; padding: 5px 14px; font-size: 11px; font-weight: 700; color: #a78bfa; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 18px; }
+    .mk-live-dot { width: 6px; height: 6px; border-radius: 50%; background: #ef4444; animation: blink 1.2s ease-in-out infinite; }
+    @keyframes blink { 0%,100%{ opacity:1; } 50%{ opacity:0.3; } }
+    .mk-hero h2 { font-size: clamp(22px, 3.2vw, 36px); font-weight: 900; color: #fff; line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 14px; }
+    .mk-hero h2 em { font-style: normal; background: linear-gradient(90deg, #818cf8, #c4b5fd); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .mk-hero-desc { font-size: 14px; color: #94a3b8; line-height: 1.7; margin-bottom: 20px; }
+
+    /* event meta */
+    .mk-meta { display: flex; gap: 20px; flex-wrap: wrap; margin-bottom: 24px; }
+    .mk-meta-item { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: #cbd5e1; }
+    .mk-meta-icon { font-size: 14px; }
+
+    /* countdown */
+    .mk-countdown { display: flex; gap: 10px; margin-bottom: 28px; }
+    .mk-cd-unit { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px; text-align: center; min-width: 56px; }
+    .mk-cd-num { font-size: 20px; font-weight: 900; color: #fff; line-height: 1; font-variant-numeric: tabular-nums; }
+    .mk-cd-lbl { font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; color: #64748b; margin-top: 3px; }
+
+    /* speakers row */
+    .mk-speakers-row { display: flex; gap: 14px; flex-wrap: wrap; }
+    .mk-spk { display: flex; align-items: center; gap: 9px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 10px; padding: 8px 12px; }
+    .mk-spk-av { width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; color: #fff; flex-shrink: 0; }
+    .mk-spk-name { font-size: 12px; font-weight: 700; color: #e2e8f0; }
+    .mk-spk-role { font-size: 10.5px; color: #64748b; }
+
+    /* registration card */
+    .mk-reg-card { background: #fff; border-radius: 16px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.4); border: 1px solid rgba(255,255,255,0.1); }
+    .mk-reg-head { background: linear-gradient(135deg, #6d28d9, #4f46e5); padding: 18px 22px; }
+    .mk-reg-head h3 { font-size: 16px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+    .mk-reg-head p  { font-size: 12px; color: rgba(255,255,255,0.72); }
+    .mk-reg-spots { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+    .mk-spots-bar { flex: 1; height: 4px; background: rgba(255,255,255,0.2); border-radius: 2px; overflow: hidden; }
+    .mk-spots-fill { height: 100%; width: 78%; background: #fff; border-radius: 2px; }
+    .mk-spots-txt { font-size: 10.5px; color: rgba(255,255,255,0.7); white-space: nowrap; }
+    .mk-reg-body { padding: 18px 22px; min-height: 110px; }
+    .mk-form-placeholder { text-align: center; padding: 16px 0; color: #94a3b8; font-size: 13px; }
+
+    /* success / failure overlays */
+    .reg-overlay { display: none; border-top: 1.5px solid; padding: 18px 22px; text-align: center; }
+    .reg-overlay.show { display: block; }
+    .reg-success { background: var(--green-lt); border-color: var(--green-bd); }
+    .reg-failure { background: var(--red-lt);   border-color: var(--red-bd); }
+    .reg-overlay h3 { font-size: 15px; font-weight: 800; margin-bottom: 6px; }
+    .reg-success h3 { color: var(--green); }
+    .reg-failure h3 { color: var(--red); animation: shake 0.5s ease; }
+    @keyframes shake { 0%,100%{ transform:translateX(0); } 20%{ transform:translateX(-6px); } 40%{ transform:translateX(6px); } 60%{ transform:translateX(-4px); } 80%{ transform:translateX(4px); } }
+    .reg-overlay p { font-size: 12.5px; margin-bottom: 12px; line-height: 1.55; }
+    .reg-success p { color: #166534; }
+    .reg-failure p { color: #991b1b; }
+    .overlay-btn { display: inline-block; padding: 9px 22px; color: #fff; border-radius: 8px; text-decoration: none; font-size: 13px; font-weight: 700; border: none; cursor: pointer; }
+    .overlay-btn-green { background: var(--green); }
+    .overlay-btn-red   { background: var(--red); }
+
+    /* running error log */
+    .error-log {
+      margin-top: 10px; background: #1e1e2e; border-radius: 8px;
+      padding: 10px 12px; display: none; overflow: hidden;
+    }
+    .error-log.show { display: block; }
+    .error-log-line { font-family: 'Menlo', monospace; font-size: 10.5px; color: #f38ba8; white-space: nowrap; overflow: hidden; animation: typewriter 0.6s steps(60) forwards; margin-bottom: 2px; }
+    .error-log-line:last-child { margin-bottom: 0; }
+    @keyframes typewriter { from { width: 0; } to { width: 100%; } }
+    .err-highlight { background: rgba(243,139,168,0.2); border-radius: 3px; padding: 0 3px; }
+
+    /* mk benefits */
+    .mk-benefits { padding: 32px 36px; background: #fff; border-top: 1px solid #f1f5f9; }
+    .mk-benefits-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); margin-bottom: 16px; }
+    .mk-benefits-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+    @media (max-width: 700px) { .mk-benefits-grid { grid-template-columns: 1fr; } }
+    .mk-benefit { padding: 14px; background: #f8fafc; border: 1px solid var(--border); border-radius: 10px; }
+    .mk-benefit-icon { font-size: 20px; margin-bottom: 8px; }
+    .mk-benefit-title { font-size: 13px; font-weight: 700; margin-bottom: 4px; }
+    .mk-benefit-desc  { font-size: 12px; color: var(--muted); line-height: 1.5; }
+
+    /* mk agenda */
+    .mk-agenda { padding: 28px 36px; background: #f8fafc; border-top: 1px solid var(--border); }
+    .mk-agenda-title { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--faint); margin-bottom: 14px; }
+    .mk-agenda-item { display: flex; gap: 14px; padding: 10px 0; border-bottom: 1px solid var(--border); align-items: flex-start; }
+    .mk-agenda-item:last-child { border-bottom: none; }
+    .mk-agenda-time { font-size: 11px; font-weight: 700; color: var(--purple); white-space: nowrap; width: 64px; flex-shrink: 0; padding-top: 2px; }
+    .mk-agenda-body-title { font-size: 13px; font-weight: 700; }
+    .mk-agenda-body-sub   { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+
+    /* mk stats */
+    .mk-stats { background: #0a0a1a; padding: 20px 36px; display: flex; gap: 0; border-top: 1px solid rgba(255,255,255,0.06); }
+    .mk-stat { flex: 1; text-align: center; padding: 0 12px; border-right: 1px solid rgba(255,255,255,0.08); }
+    .mk-stat:last-child { border-right: none; }
+    .mk-stat-num { font-size: 22px; font-weight: 900; color: #fff; }
+    .mk-stat-lbl { font-size: 10.5px; color: #475569; margin-top: 2px; }
+
+    /* ════════════════════════════
+       CRM
+    ════════════════════════════ */
+    .crm-toolbar { display: flex; align-items: center; justify-content: space-between; padding: 10px 18px; border-bottom: 1.5px solid var(--border); background: var(--blue-lt); }
+    .crm-left { display: flex; align-items: center; gap: 10px; }
+    .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #22c55e; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%{ box-shadow:0 0 0 0 rgba(34,197,94,.45); } 70%{ box-shadow:0 0 0 7px rgba(34,197,94,0); } 100%{ box-shadow:0 0 0 0 rgba(34,197,94,0); } }
+    .live-lbl { font-size: 11.5px; font-weight: 700; color: var(--blue); }
+    .count-badge { background: var(--blue); color: #fff; font-size: 10px; font-weight: 700; border-radius: 99px; padding: 2px 9px; }
+    .crm-btn { font-size: 11px; font-weight: 600; padding: 5px 13px; border-radius: 7px; border: 1.5px solid var(--blue-bd); background: #fff; color: var(--blue); cursor: pointer; transition: background 0.15s; }
+    .crm-btn:hover { background: var(--blue-lt); }
+    .crm-table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 12.5px; min-width: 640px; }
+    thead tr { background: #f0f6ff; }
+    th { padding: 9px 14px; text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; color: var(--blue); border-bottom: 1.5px solid var(--blue-bd); white-space: nowrap; }
+    td { padding: 9px 14px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover td { background: #f8faff; }
+    tbody tr.row-in td { animation: row-in 0.45s ease; }
+    @keyframes row-in { from { opacity:0; transform:translateY(-8px); background:#dbeafe; } to { opacity:1; transform:translateY(0); } }
+    .badge { display: inline-block; font-size: 10.5px; font-weight: 600; border-radius: 5px; padding: 2px 8px; }
+    .b-grn { background:#dcfce7; color:#15803d; } .b-blu { background:#dbeafe; color:#1d4ed8; }
+    .crm-empty { text-align: center; padding: 52px 20px; color: var(--faint); }
+    .crm-empty .ei { font-size: 30px; margin-bottom: 10px; }
+    .crm-empty p { font-size: 13px; }
+    .chip { display: inline-block; font-size: 10.5px; background: var(--bg); border: 1px solid var(--border); border-radius: 5px; padding: 2px 7px; margin: 2px 2px 2px 0; }
+    .chip b { color: var(--purple); }
+    .copy-btn { font-size: 10px; font-weight: 600; padding: 3px 9px; border-radius: 5px; border: 1px solid var(--border-2); background: var(--bg); color: var(--muted); cursor: pointer; transition: background 0.15s; white-space: nowrap; }
+    .copy-btn:hover { background: var(--border); color: var(--text); }
+    .copy-btn.ok { background: var(--green-lt); color: var(--green); border-color: var(--green-bd); }
+
+    /* ─── TOAST ─── */
+    #toast { position: fixed; bottom: 24px; right: 24px; z-index: 999; background: #1e293b; color: #e2e8f0; padding: 11px 18px; border-radius: 10px; font-size: 13px; font-weight: 500; opacity: 0; transform: translateY(6px); transition: opacity 0.25s, transform 0.25s; pointer-events: none; }
+    #toast.show { opacity: 1; transform: translateY(0); }
+
+    /* ─── FOOTER ─── */
+    footer { border-top: 1.5px solid var(--border); padding: 24px; text-align: center; font-size: 12px; color: var(--faint); }
+    footer a { color: var(--purple); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect width="20" height="20" rx="5" fill="#6d28d9"/><path d="M5 10h10M10 5v10" stroke="#fff" stroke-width="2" stroke-linecap="round"/></svg>
+    Riverside <span>API Playground</span>
+  </div>
+  <div class="nav-links">
+    <button class="nav-link" onclick="jumpTo('flow')">How it works</button>
+    <button class="nav-link" onclick="jumpTo('playground')">Embed Playground</button>
+    <button class="nav-link" onclick="jumpTo('crm')">Mock CRM</button>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="eyebrow">Interactive Test Environment</div>
+    <h1>Register → <em>Riverside</em> → Your CRM</h1>
+    <p>Paste your Riverside embed code into a mock website, submit a real registration, and watch the data arrive in the CRM — live.</p>
+    <div class="cta-row">
+      <button class="btn btn-purple" onclick="jumpTo('playground')">Try the Embed Playground →</button>
+      <button class="btn btn-outline" onclick="jumpTo('flow')">See how it works</button>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════
+       SECTION 1: ANIMATED FLOW
+  ══════════════════════════════ -->
+  <section id="flow">
+    <div class="section-label">
+      <div class="section-num">1</div>
+      <div class="section-title">How the data flows — both directions</div>
+    </div>
+    <p class="section-sub">Data moves <em>in</em> when someone registers from outside Riverside, and <em>out</em> when your CRM fetches it after the session.</p>
+
+    <div class="flow-panel">
+
+      <!-- Flow A -->
+      <div class="flow-block">
+        <div class="flow-direction-label" style="color:var(--purple);">
+          <span style="background:var(--purple-lt);border:1.5px solid var(--purple-bd);border-radius:6px;padding:2px 10px;">Flow A — Push In</span>
+          Register from your site → into Riverside
+        </div>
+        <div class="flow-row">
+          <div class="fnode n-pur">
+            <div class="fnode-lbl">Source</div>
+            <div class="fnode-name">Your Website</div>
+            <div class="fnode-sub">Embedded form or API call</div>
+          </div>
+          <div class="farrow">
+            <div class="farrow-track"><div class="farrow-packet pkt-a1"></div></div>
+            <div class="farrow-label">POST</div>
+          </div>
+          <div class="fnode n-ora">
+            <div class="fnode-lbl">Riverside API</div>
+            <div class="fnode-name">/events/{id}/registrants</div>
+            <div class="fnode-sub">Validates + creates record</div>
+          </div>
+          <div class="farrow">
+            <div class="farrow-track"><div class="farrow-packet pkt-a2"></div></div>
+            <div class="farrow-label">Stored</div>
+          </div>
+          <div class="fnode n-grn">
+            <div class="fnode-lbl">Stored In</div>
+            <div class="fnode-name">Riverside</div>
+            <div class="fnode-sub">Approved + join URL issued</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Flow B -->
+      <div class="flow-block">
+        <div class="flow-direction-label" style="color:var(--blue);">
+          <span style="background:var(--blue-lt);border:1.5px solid var(--blue-bd);border-radius:6px;padding:2px 10px;">Flow B — Pull Out</span>
+          Riverside → into your CRM
+        </div>
+        <div class="flow-row">
+          <div class="fnode n-grn">
+            <div class="fnode-lbl">Lives In</div>
+            <div class="fnode-name">Riverside</div>
+            <div class="fnode-sub">Registration + attendance</div>
+          </div>
+          <div class="farrow">
+            <div class="farrow-track"><div class="farrow-packet pkt-b1"></div></div>
+            <div class="farrow-label">GET</div>
+          </div>
+          <div class="fnode n-ora">
+            <div class="fnode-lbl">Riverside API</div>
+            <div class="fnode-name">/events/{id}/registrants</div>
+            <div class="fnode-sub">Paginated, filterable</div>
+          </div>
+          <div class="farrow">
+            <div class="farrow-track"><div class="farrow-packet pkt-b2"></div></div>
+            <div class="farrow-label">Syncs</div>
+          </div>
+          <div class="fnode n-blu">
+            <div class="fnode-lbl">Your CRM</div>
+            <div class="fnode-name">Any CRM or Platform</div>
+            <div class="fnode-sub">Contacts, attendance, UTM</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════
+       SECTION 2: EMBED PLAYGROUND
+  ══════════════════════════════ -->
+  <section id="playground">
+    <div class="section-label">
+      <div class="section-num">2</div>
+      <div class="section-title">Embed Playground</div>
+    </div>
+    <p class="section-sub">Follow the steps below to embed a real Riverside registration form and see data flow live into the Mock CRM.</p>
+
+    <!-- Step 0 -->
+    <div class="step0-card">
+      <div class="step0-left">
+        <div class="step0-num">0</div>
+        <div class="step0-text">
+          <h3>First — Create a webinar in Riverside</h3>
+          <p>Log in to your Riverside account, create a webinar event, and set up your registration form with whatever fields you need. The embed code is generated automatically.</p>
+        </div>
+      </div>
+      <a href="https://riverside.fm" target="_blank" rel="noopener" class="step0-btn">
+        Open Riverside ↗
+      </a>
+    </div>
+
+    <div class="pg-grid">
+
+      <!-- LEFT: code input -->
+      <div class="card">
+        <div class="card-head" style="background:var(--purple-lt);color:var(--purple);">
+          ✦ Step 1 — Copy &amp; paste your embed code
+        </div>
+        <div class="card-body">
+          <textarea id="embed-code" placeholder='<div id="riverside-webinar-form">
+  Loading...
+</div>
+
+<script
+  src="https://assets.riverside.fm/..."
+  data-event-id="your-event-id"
+  data-api-base="https://riverside.com"
+  data-target="#riverside-webinar-form"
+  crossorigin="anonymous">
+</script>'></textarea>
+
+          <div class="disclaimer">
+            <div class="disclaimer-icon">📧</div>
+            <div><strong>Use a real email address.</strong> When you register, Riverside will send you a genuine confirmation email with your personal join link for the webinar. Clicking the link will take you directly into the live session.</div>
+          </div>
+
+          <div class="parse-error" id="parse-error"></div>
+
+          <button class="render-btn" id="render-btn" onclick="renderEmbed()">
+            ➤ &nbsp;Step 2 — Render My Form in the Mock Website
+          </button>
+          <button class="reset-btn" onclick="confirmReset()">↺ Reset &amp; start over</button>
+        </div>
+      </div>
+
+      <!-- RIGHT: how it works -->
+      <div class="card">
+        <div class="card-head">💡 What happens step by step</div>
+        <div class="card-body" style="padding-top:12px;">
+          <div class="steps">
+            <div class="step" data-n="0"><div><div class="step-t">Create your webinar in Riverside</div><div class="step-d">Set up your event and registration form fields in the Riverside dashboard.</div></div></div>
+            <div class="step" data-n="1"><div><div class="step-t">Copy the embed snippet</div><div class="step-d">Riverside generates a &lt;div&gt; + &lt;script&gt; block. Copy it from your dashboard.</div></div></div>
+            <div class="step" data-n="2"><div><div class="step-t">Paste &amp; render</div><div class="step-d">The real Riverside form loads inside the mock website below.</div></div></div>
+            <div class="step" data-n="3"><div><div class="step-t">Fill out and submit</div><div class="step-d">A live POST goes to Riverside's API. You'll receive a real confirmation email.</div></div></div>
+            <div class="step" data-n="4"><div><div class="step-t">CRM updates instantly</div><div class="step-d">Your name, email, and custom fields appear in the Mock CRM below in real time.</div></div></div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- MOCK WEBSITE -->
+    <div class="mock-wrap" style="margin-top:24px;">
+      <div class="mock-label">↓ Mock website — your form renders here</div>
+
+      <div class="mock-shell">
+        <!-- Browser chrome -->
+        <div class="mock-chrome">
+          <div class="chrome-dots">
+            <div class="chrome-dot dot-r"></div>
+            <div class="chrome-dot dot-y"></div>
+            <div class="chrome-dot dot-g"></div>
+          </div>
+          <div class="chrome-url">techsummit2026.com/register</div>
+          <button class="chrome-reload" onclick="confirmReset()" title="Reset">↺</button>
+        </div>
+
+        <!-- Mock site -->
+        <div class="mock-site">
+
+          <!-- Nav -->
+          <div class="mk-nav">
+            <div class="mk-logo">Tech<span>Summit</span></div>
+            <div class="mk-links">
+              <a class="mk-link" href="#">Agenda</a>
+              <a class="mk-link" href="#">Speakers</a>
+              <a class="mk-link" href="#">FAQ</a>
+            </div>
+            <a class="mk-reg" href="#">Register Free</a>
+          </div>
+
+          <!-- Hero -->
+          <div class="mk-hero">
+            <div class="mk-hero-left">
+              <div class="mk-badge"><div class="mk-live-dot"></div>Live Webinar · June 30, 2026</div>
+              <h2>The Future of <em>AI-Powered</em> Media Production</h2>
+              <p class="mk-hero-desc">Join industry leaders to explore how artificial intelligence is transforming podcasting, live video, and content creation — from recording to global distribution.</p>
+
+              <div class="mk-meta">
+                <div class="mk-meta-item"><span class="mk-meta-icon">📅</span> June 30, 2026 · 2:00 PM EST</div>
+                <div class="mk-meta-item"><span class="mk-meta-icon">⏱</span> 90 minutes</div>
+                <div class="mk-meta-item"><span class="mk-meta-icon">🌐</span> Virtual · Free to attend</div>
+              </div>
+
+              <div class="mk-countdown" id="mk-countdown">
+                <div class="mk-cd-unit"><div class="mk-cd-num" id="cd-d">--</div><div class="mk-cd-lbl">Days</div></div>
+                <div class="mk-cd-unit"><div class="mk-cd-num" id="cd-h">--</div><div class="mk-cd-lbl">Hours</div></div>
+                <div class="mk-cd-unit"><div class="mk-cd-num" id="cd-m">--</div><div class="mk-cd-lbl">Min</div></div>
+                <div class="mk-cd-unit"><div class="mk-cd-num" id="cd-s">--</div><div class="mk-cd-lbl">Sec</div></div>
+              </div>
+
+              <div class="mk-speakers-row">
+                <div class="mk-spk">
+                  <div class="mk-spk-av" style="background:linear-gradient(135deg,#6d28d9,#4f46e5);">S</div>
+                  <div><div class="mk-spk-name">Sara Chen</div><div class="mk-spk-role">CEO, NovaCast</div></div>
+                </div>
+                <div class="mk-spk">
+                  <div class="mk-spk-av" style="background:linear-gradient(135deg,#0284c7,#0ea5e9);">M</div>
+                  <div><div class="mk-spk-name">Marcus Lee</div><div class="mk-spk-role">Head of AI, Luminary Labs</div></div>
+                </div>
+                <div class="mk-spk">
+                  <div class="mk-spk-av" style="background:linear-gradient(135deg,#be123c,#e11d48);">A</div>
+                  <div><div class="mk-spk-name">Anika Patel</div><div class="mk-spk-role">VP Product, Streamline</div></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Registration card -->
+            <div>
+              <div class="mk-reg-card">
+                <div class="mk-reg-head">
+                  <h3>Reserve Your Spot — It's Free</h3>
+                  <p>Limited seats. Registered attendees receive the full recording.</p>
+                  <div class="mk-reg-spots">
+                    <div class="mk-spots-bar"><div class="mk-spots-fill"></div></div>
+                    <div class="mk-spots-txt">78% full</div>
+                  </div>
+                </div>
+                <div class="mk-reg-body" id="mk-reg-body">
+                  <div class="mk-form-placeholder" id="form-placeholder">
+                    <div style="font-size:22px;margin-bottom:8px;">📋</div>
+                    <p style="font-size:12.5px;">Paste your embed code above<br>and click <strong>Render My Form</strong></p>
+                  </div>
+                  <div id="form-inject-target" style="display:none;"></div>
+                </div>
+
+                <!-- Error log (running typewriter) -->
+                <div class="error-log" id="error-log"></div>
+
+                <!-- Success overlay -->
+                <div class="reg-overlay reg-success" id="reg-success">
+                  <div style="font-size:26px;margin-bottom:8px;">🎉</div>
+                  <h3>You're registered!</h3>
+                  <p>Check your inbox — Riverside just sent you a confirmation email with your personal join link.<br>Scroll down to see your data in the Mock CRM.</p>
+                  <a href="#" id="join-link-el" class="overlay-btn overlay-btn-green" target="_blank" rel="noopener">Open join link ↗</a>
+                </div>
+
+                <!-- Failure overlay -->
+                <div class="reg-overlay reg-failure" id="reg-failure">
+                  <div style="font-size:26px;margin-bottom:8px;">⚠️</div>
+                  <h3 id="failure-title">Registration failed</h3>
+                  <p id="failure-msg">Something went wrong.</p>
+                  <button onclick="dismissError()" class="overlay-btn overlay-btn-red">Try again</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Benefits -->
+          <div class="mk-benefits">
+            <div class="mk-benefits-title">What you'll walk away with</div>
+            <div class="mk-benefits-grid">
+              <div class="mk-benefit">
+                <div class="mk-benefit-icon">🤖</div>
+                <div class="mk-benefit-title">AI in production workflows</div>
+                <div class="mk-benefit-desc">Real case studies from teams using AI to cut editing time by 80%.</div>
+              </div>
+              <div class="mk-benefit">
+                <div class="mk-benefit-icon">📡</div>
+                <div class="mk-benefit-title">Live distribution strategies</div>
+                <div class="mk-benefit-desc">How to reach audiences across platforms from a single stream.</div>
+              </div>
+              <div class="mk-benefit">
+                <div class="mk-benefit-icon">🎙</div>
+                <div class="mk-benefit-title">Studio-quality remote recording</div>
+                <div class="mk-benefit-desc">Technical deep-dive on local recording vs cloud-based pipelines.</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Agenda -->
+          <div class="mk-agenda">
+            <div class="mk-agenda-title">Session agenda</div>
+            <div class="mk-agenda-item">
+              <div class="mk-agenda-time">2:00 PM</div>
+              <div><div class="mk-agenda-body-title">Opening keynote — The AI inflection point in media</div><div class="mk-agenda-body-sub">Sara Chen · NovaCast</div></div>
+            </div>
+            <div class="mk-agenda-item">
+              <div class="mk-agenda-time">2:25 PM</div>
+              <div><div class="mk-agenda-body-title">From raw audio to polished episode in 10 minutes</div><div class="mk-agenda-body-sub">Marcus Lee · Luminary Labs</div></div>
+            </div>
+            <div class="mk-agenda-item">
+              <div class="mk-agenda-time">2:50 PM</div>
+              <div><div class="mk-agenda-body-title">Scaling live video without a broadcast team</div><div class="mk-agenda-body-sub">Anika Patel · Streamline</div></div>
+            </div>
+            <div class="mk-agenda-item">
+              <div class="mk-agenda-time">3:15 PM</div>
+              <div><div class="mk-agenda-body-title">Live Q&A — open floor with all speakers</div><div class="mk-agenda-body-sub">All panelists</div></div>
+            </div>
+          </div>
+
+          <!-- Stats -->
+          <div class="mk-stats">
+            <div class="mk-stat"><div class="mk-stat-num">3,200+</div><div class="mk-stat-lbl">Registered</div></div>
+            <div class="mk-stat"><div class="mk-stat-num">14</div><div class="mk-stat-lbl">Expert speakers</div></div>
+            <div class="mk-stat"><div class="mk-stat-num">6</div><div class="mk-stat-lbl">Sessions</div></div>
+            <div class="mk-stat"><div class="mk-stat-num">Free</div><div class="mk-stat-lbl">Always</div></div>
+          </div>
+
+        </div><!-- /mock-site -->
+      </div><!-- /mock-shell -->
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════
+       SECTION 3: MOCK CRM
+  ══════════════════════════════ -->
+  <section id="crm">
+    <div class="section-label">
+      <div class="section-num">3</div>
+      <div class="section-title">Mock CRM — Live Registrant Feed</div>
+    </div>
+    <p class="section-sub">Every successful registration from the form above appears here instantly — exactly as your real CRM would receive it from the Riverside API.</p>
+
+    <div class="card" style="margin-top:14px;">
+      <div class="crm-toolbar">
+        <div class="crm-left">
+          <div class="live-dot"></div>
+          <span class="live-lbl">Live</span>
+          <span class="count-badge" id="crm-count">0 registrants</span>
+        </div>
+        <div style="display:flex;gap:8px;">
+          <button class="crm-btn" onclick="exportCSV()">Export CSV</button>
+          <button class="crm-btn" onclick="clearCRM()">Clear</button>
+        </div>
+      </div>
+      <div class="crm-table-wrap">
+        <div class="crm-empty" id="crm-empty">
+          <div class="ei">📭</div>
+          <p>Waiting for registrations…<br><strong>Complete the form above to see real data appear here.</strong></p>
+        </div>
+        <table id="crm-table" style="display:none;">
+          <thead>
+            <tr><th>#</th><th>Name</th><th>Email</th><th>Registered At</th><th>Join URL</th><th>Custom Fields</th><th>Raw JSON</th></tr>
+          </thead>
+          <tbody id="crm-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<footer>
+  Riverside API Playground · <a href="https://docs.riverside.fm" target="_blank" rel="noopener">docs.riverside.fm ↗</a>
+</footer>
+
+<div id="toast"></div>
+
+<script>
+  /* ── nav ── */
+  function jumpTo(id) { const el = document.getElementById(id); if (el) el.scrollIntoView({ behavior:'smooth', block:'start' }); }
+
+  /* ── toast ── */
+  let toastTimer;
+  function showToast(msg, ms=3000) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(toastTimer); toastTimer=setTimeout(()=>t.classList.remove('show'),ms); }
+
+  /* ── countdown ── */
+  const TARGET = new Date('2026-06-30T14:00:00-05:00');
+  function updateCountdown() {
+    const diff = TARGET - Date.now();
+    if (diff <= 0) { document.getElementById('mk-countdown').style.display='none'; return; }
+    const d = Math.floor(diff/86400000);
+    const h = Math.floor((diff%86400000)/3600000);
+    const m = Math.floor((diff%3600000)/60000);
+    const s = Math.floor((diff%60000)/1000);
+    document.getElementById('cd-d').textContent = String(d).padStart(2,'0');
+    document.getElementById('cd-h').textContent = String(h).padStart(2,'0');
+    document.getElementById('cd-m').textContent = String(m).padStart(2,'0');
+    document.getElementById('cd-s').textContent = String(s).padStart(2,'0');
+  }
+  updateCountdown();
+  setInterval(updateCountdown, 1000);
+
+  /* ── form value capture via MutationObserver ── */
+  const captured = { first_name:'', last_name:'', email:'', custom_fields:[] };
+
+  function watchFormInputs(container) {
+    const observer = new MutationObserver(() => {
+      container.querySelectorAll('input, select, textarea').forEach(inp => {
+        if (inp.dataset.watched) return;
+        inp.dataset.watched = '1';
+        const sync = () => {
+          const name  = (inp.name||inp.id||'').toLowerCase();
+          const label = inp.labels && inp.labels[0] ? inp.labels[0].textContent.trim() : (inp.placeholder||inp.name||'');
+          const val   = inp.type==='checkbox' ? inp.checked : inp.value;
+          if (name.includes('email') || label.toLowerCase().includes('email')) captured.email = val;
+          else if (name.includes('first') || label.toLowerCase().includes('first')) captured.first_name = val;
+          else if (name.includes('last')  || label.toLowerCase().includes('last'))  captured.last_name  = val;
+          if (label) {
+            const idx = captured.custom_fields.findIndex(f=>f.label===label);
+            if (idx>=0) captured.custom_fields[idx].value = val;
+            else captured.custom_fields.push({ label, value: val });
+          }
+        };
+        inp.addEventListener('input',  sync);
+        inp.addEventListener('change', sync);
+      });
+    });
+    observer.observe(container, { childList:true, subtree:true });
+  }
+
+  /* ── render embed ── */
+  function renderEmbed() {
+    const code   = document.getElementById('embed-code').value.trim();
+    const errEl  = document.getElementById('parse-error');
+    errEl.style.display = 'none';
+    if (!code) { errEl.textContent='⚠ Please paste your embed snippet first.'; errEl.style.display='block'; return; }
+    const srcMatch     = code.match(/src=["']([^"']+)["']/);
+    const eventIdMatch = code.match(/data-event-id=["']([^"']+)["']/);
+    const apiBaseMatch = code.match(/data-api-base=["']([^"']+)["']/);
+    if (!srcMatch || !eventIdMatch) { errEl.textContent='⚠ Could not find a valid Riverside embed. Make sure the snippet includes a <script> tag with data-event-id.'; errEl.style.display='block'; return; }
+    const scriptSrc = srcMatch[1];
+    const eventId   = eventIdMatch[1];
+    const apiBase   = apiBaseMatch ? apiBaseMatch[1] : 'https://riverside.com';
+    document.getElementById('form-placeholder').style.display = 'none';
+    const target = document.getElementById('form-inject-target');
+    target.style.display = 'block'; target.innerHTML = '';
+    const formDiv = document.createElement('div');
+    formDiv.id = 'riverside-webinar-form';
+    formDiv.textContent = 'Loading…';
+    target.appendChild(formDiv);
+    watchFormInputs(target);
+    const script = document.createElement('script');
+    script.src = scriptSrc; script.async = true;
+    script.setAttribute('data-api-base', apiBase);
+    script.setAttribute('data-event-id', eventId);
+    script.setAttribute('data-target', '#riverside-webinar-form');
+    script.setAttribute('crossorigin', 'anonymous');
+    document.body.appendChild(script);
+    const btn = document.getElementById('render-btn');
+    btn.disabled = true;
+    btn.textContent = '✓ Form rendered — fill it out in the mock website below';
+    showToast('✓ Form rendered — scroll down to fill it out');
+    setTimeout(() => jumpTo('playground'), 300);
+  }
+
+  /* ── Riverside success ── */
+  document.addEventListener('riverside:registrationSuccess', function(e) {
+    const detail      = (e&&e.detail)||{};
+    const webinarLink = detail.webinarLink || detail.join_url || null;
+    const reg = {
+      first_name:    captured.first_name || detail.first_name || '',
+      last_name:     captured.last_name  || detail.last_name  || '',
+      email:         captured.email      || detail.email      || '',
+      join_url:      webinarLink,
+      custom_fields: captured.custom_fields.filter(f =>
+        f.label && !['email','first name','last name','first','last'].some(k=>f.label.toLowerCase().includes(k))
+      ),
+      registered_at: new Date().toISOString(),
+      raw: detail,
+    };
+    addCRMRow(reg);
+    const joinEl = document.getElementById('join-link-el');
+    if (webinarLink) { joinEl.href=webinarLink; joinEl.style.display='inline-block'; } else { joinEl.style.display='none'; }
+    document.getElementById('reg-success').classList.add('show');
+    document.getElementById('reg-failure').classList.remove('show');
+    document.getElementById('error-log').classList.remove('show');
+    showToast('🎉 Registered! Data captured in the CRM.', 4000);
+    setTimeout(() => jumpTo('crm'), 1600);
+  });
+
+  /* ── Riverside failure ── */
+  document.addEventListener('riverside:registrationFailure', function(e) {
+    const detail = (e&&e.detail)||{};
+    const status = detail.status || detail.statusCode || 0;
+    const msg    = String(detail.message || detail.error || '');
+
+    let title = 'Registration failed';
+    let body  = 'Something went wrong. Please try again with a different email.';
+    let logLines = [
+      `POST /api/v4/events/{eventId}/register → <span class="err-highlight">${status||'ERR'}</span>`,
+      `riverside:registrationFailure fired`,
+      `detail.message: <span class="err-highlight">"${msg||'no message'}"</span>`,
+    ];
+
+    if (status===409 || msg.toLowerCase().includes('already')) {
+      title = 'Already registered';
+      body  = 'This email address is already registered for this event. Try a different email, or check your inbox for your original join link.';
+      logLines.push(`→ Cause: <span class="err-highlight">duplicate email</span> — 409 Conflict`);
+    } else if (status===422) {
+      title = 'Invalid details';
+      body  = 'One or more fields are invalid — check your email address and required fields, then try again.';
+      logLines.push(`→ Cause: <span class="err-highlight">validation failure</span> — 422 Unprocessable`);
+    } else if (status===404) {
+      title = 'Event not found';
+      body  = 'This webinar event could not be found. Double-check the event ID in your embed code.';
+      logLines.push(`→ Cause: <span class="err-highlight">unknown event ID</span> — 404 Not Found`);
+    } else if (status===401) {
+      title = 'Unauthorised';
+      body  = 'The embed code does not have permission to register for this event.';
+      logLines.push(`→ Cause: <span class="err-highlight">invalid auth</span> — 401 Unauthorised`);
+    }
+
+    document.getElementById('failure-title').textContent = title;
+    document.getElementById('failure-msg').textContent   = body;
+    document.getElementById('reg-failure').classList.add('show');
+    document.getElementById('reg-success').classList.remove('show');
+
+    // Running error log
+    const log = document.getElementById('error-log');
+    log.innerHTML = '';
+    log.classList.add('show');
+    logLines.forEach((line, i) => {
+      const el = document.createElement('div');
+      el.className = 'error-log-line';
+      el.innerHTML = line;
+      el.style.animationDelay = (i * 0.28) + 's';
+      log.appendChild(el);
+    });
+
+    showToast('⚠ ' + title, 4000);
+    console.error('Riverside registrationFailure:', detail);
+  });
+
+  function dismissError() {
+    document.getElementById('reg-failure').classList.remove('show');
+    document.getElementById('error-log').classList.remove('show');
+  }
+
+  /* ── CRM ── */
+  const registrants = [];
+  function addCRMRow(r) {
+    registrants.push(r);
+    const n = registrants.length;
+    document.getElementById('crm-empty').style.display  = 'none';
+    document.getElementById('crm-table').style.display  = 'table';
+    const d = new Date(r.registered_at);
+    const dateStr = d.toLocaleDateString('en-US',{month:'short',day:'numeric'})+' '+d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+    const cfHTML = r.custom_fields.length
+      ? r.custom_fields.map(f=>`<span class="chip"><b>${esc(f.label)}:</b> ${esc(String(f.value))}</span>`).join('')
+      : '<span style="color:var(--faint);font-size:11px;">—</span>';
+    const joinHTML = r.join_url
+      ? `<a href="${esc(r.join_url)}" target="_blank" rel="noopener" style="color:var(--blue);font-size:11px;">Link ↗</a>`
+      : '<span style="color:var(--faint);font-size:11px;">—</span>';
+    const rawStr = JSON.stringify(r.raw, null, 2);
+    const tr = document.createElement('tr');
+    tr.className = 'row-in';
+    tr.innerHTML = `
+      <td><span class="badge b-blu">${n}</span></td>
+      <td><strong>${esc((r.first_name+' '+r.last_name).trim())||'<span style="color:var(--faint)">—</span>'}</strong></td>
+      <td style="font-size:12px;">${esc(r.email)||'<span style="color:var(--faint)">—</span>'}</td>
+      <td style="font-size:11.5px;white-space:nowrap;color:var(--muted);">${dateStr}</td>
+      <td>${joinHTML}</td>
+      <td>${cfHTML}</td>
+      <td><button class="copy-btn" onclick="copyJSON(this,${escAttr(rawStr)})">Copy JSON</button></td>
+    `;
+    document.getElementById('crm-tbody').prepend(tr);
+    document.getElementById('crm-count').textContent = n+(n===1?' registrant':' registrants');
+    setTimeout(()=>tr.classList.remove('row-in'), 500);
+  }
+
+  function esc(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+  function escAttr(s) { return "'"+String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n')+"'"; }
+
+  function copyJSON(btn, json) { navigator.clipboard.writeText(json).then(()=>{ btn.textContent='✓ Copied!'; btn.classList.add('ok'); setTimeout(()=>{ btn.textContent='Copy JSON'; btn.classList.remove('ok'); },2000); }); }
+
+  function exportCSV() {
+    if (!registrants.length) { showToast('No registrants to export yet'); return; }
+    const hdr=['#','First Name','Last Name','Email','Registered At','Join URL','Custom Fields'];
+    const rows=registrants.map((r,i)=>[i+1,r.first_name,r.last_name,r.email,r.registered_at,r.join_url||'',r.custom_fields.map(f=>f.label+': '+f.value).join(' | ')].map(v=>'"'+String(v).replace(/"/g,'""')+'"'));
+    const csv=[hdr,...rows].map(r=>r.join(',')).join('\n');
+    const a=document.createElement('a'); a.href='data:text/csv,'+encodeURIComponent(csv); a.download='riverside-registrants.csv'; a.click();
+    showToast('✓ CSV exported');
+  }
+
+  function clearCRM() {
+    if (!registrants.length) return;
+    if (!confirm('Clear all '+registrants.length+' registrant(s)?')) return;
+    registrants.length=0;
+    document.getElementById('crm-tbody').innerHTML='';
+    document.getElementById('crm-table').style.display='none';
+    document.getElementById('crm-empty').style.display='block';
+    document.getElementById('crm-count').textContent='0 registrants';
+  }
+
+  function confirmReset() { if (confirm('Reset the playground? The page will reload.')) window.location.reload(); }
+</script>
+</body>
+</html>
